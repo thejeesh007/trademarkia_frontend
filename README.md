@@ -10,10 +10,12 @@ Incremental implementation for a real-time collaborative spreadsheet using Next.
 - Editable 40x20 grid with row/column headers and keyboard navigation
 - Firestore-backed cell autosave with realtime updates between sessions
 - Save-state indicator in editor (`Connecting`, `Saving`, `Saved`, `Error`)
+- Formula engine v1: `=SUM(...)`, arithmetic (`+ - * /`), and cell references
 
 ## Next Steps
 - Add presence (active collaborators)
-- Add formula parsing (`SUM`, arithmetic, cell references)
+- Add identity (Google sign-in or display name)
+- Add collaborator presence UI
 
 ## Local Setup
 1. Copy `.env.example` to `.env.local`

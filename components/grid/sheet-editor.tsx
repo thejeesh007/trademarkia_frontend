@@ -4,6 +4,7 @@ import Link from "next/link";
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { hasFirebaseConfig } from "@/lib/firebase/client";
 import { subscribeToDocumentCells, upsertCellValue } from "@/lib/firebase/cells";
+import { computeDisplayValues } from "@/lib/formula/engine";
 
 const ROW_COUNT = 40;
 const COLUMN_COUNT = 20;
@@ -44,6 +45,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
   const [activeCell, setActiveCell] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("connecting");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const computedValues = useMemo(() => computeDisplayValues(cellValues), [cellValues]);
 
   useEffect(() => {
     if (!hasFirebaseConfig()) {
@@ -238,6 +240,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
                   {columns.map((_, columnIndex) => {
                     const id = cellId(rowIndex, columnIndex);
                     const isActive = id === activeCell;
+                    const inputValue = isActive ? cellValues[id] ?? "" : computedValues[id] ?? cellValues[id] ?? "";
 
                     return (
                       <td key={id} className="border border-slate-200 p-0">
@@ -248,8 +251,9 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
                           className={`h-9 w-full border-0 px-2 text-sm outline-none ${
                             isActive ? "bg-blue-50" : "bg-white"
                           }`}
-                          value={cellValues[id] ?? ""}
+                          value={inputValue}
                           onFocus={() => setActiveCell(id)}
+                          onBlur={() => setActiveCell(null)}
                           onChange={(event) => updateCell(id, event.target.value)}
                           onKeyDown={(event) => onCellKeyDown(event, rowIndex, columnIndex)}
                         />
