@@ -268,6 +268,8 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
     return "border-emerald-300 bg-emerald-50 text-emerald-800";
   }
 
+  const activeCellRawValue = activeCell ? cellValues[activeCell] ?? "" : "";
+
   function submitIdentity() {
     if (!identityName.trim()) {
       return;
@@ -302,6 +304,27 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
           {saveError}
         </p>
       ) : null}
+
+      <section className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">
+            {activeCell ? `Cell ${activeCell}` : "Select a cell"}
+          </div>
+
+          <input
+            className="min-w-[280px] flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 focus:ring disabled:bg-slate-100"
+            placeholder="Type value or formula (e.g. =SUM(A1:A5))"
+            value={activeCellRawValue}
+            onChange={(event) => {
+              if (!activeCell) {
+                return;
+              }
+              updateCell(activeCell, event.target.value);
+            }}
+            disabled={!activeCell}
+          />
+        </div>
+      </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
         <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-200">
