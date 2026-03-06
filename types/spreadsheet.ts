@@ -16,3 +16,8 @@ export type ActiveUser = {
   color: string;
   lastSeenAt: number;
 };
+
+export type CreateDocumentInput = {
+  title: string;
+  authorName: string;
+};

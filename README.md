@@ -4,6 +4,11 @@ Incremental implementation for a real-time collaborative spreadsheet using Next.
 
 ## Current Progress
 - Project scaffold complete
-- App Router + strict TypeScript configured
-- Tailwind configured
-- Feature directories created for dashboard, editor, realtime sync, presence, and formulas
+- Dashboard implemented with create/list flow
+- Temporary local storage backing for documents
+- Document route scaffold in place (`/doc/[id]`)
+
+## Next Steps
+- Replace local storage with Firebase Firestore documents
+- Implement editor grid with cell editing
+- Add realtime syncing and presence
