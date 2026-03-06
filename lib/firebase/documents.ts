@@ -2,9 +2,6 @@ import {
   addDoc,
   collection,
   getDocs,
-  limit,
-  orderBy,
-  query,
   serverTimestamp
 } from "firebase/firestore";
 import { FIREBASE_COLLECTIONS } from "@/lib/firebase/constants";
@@ -15,10 +12,13 @@ type FirestoreDocumentData = {
   title?: unknown;
   authorName?: unknown;
   updatedAt?: { toMillis?: () => number } | null;
+  createdAt?: { toMillis?: () => number } | null;
 };
 
-function toMillis(value: FirestoreDocumentData["updatedAt"]): number {
-  return typeof value?.toMillis === "function" ? value.toMillis() : Date.now();
+function toMillis(
+  value: FirestoreDocumentData["updatedAt"] | FirestoreDocumentData["createdAt"]
+): number | undefined {
+  return typeof value?.toMillis === "function" ? value.toMillis() : undefined;
 }
 
 export async function listDocuments(): Promise<SpreadsheetDocument[]> {
@@ -27,22 +27,19 @@ export async function listDocuments(): Promise<SpreadsheetDocument[]> {
   }
 
   const db = getFirestoreDb();
-  const docsQuery = query(
-    collection(db, FIREBASE_COLLECTIONS.documents),
-    orderBy("updatedAt", "desc"),
-    limit(100)
-  );
-  const snapshot = await getDocs(docsQuery);
+  const snapshot = await getDocs(collection(db, FIREBASE_COLLECTIONS.documents));
 
-  return snapshot.docs.map((doc) => {
-    const data = doc.data() as FirestoreDocumentData;
-    return {
-      id: doc.id,
-      title: typeof data.title === "string" ? data.title : "Untitled",
-      authorName: typeof data.authorName === "string" ? data.authorName : "Unknown",
-      updatedAt: toMillis(data.updatedAt)
-    };
-  });
+  return snapshot.docs
+    .map((doc) => {
+      const data = doc.data() as FirestoreDocumentData;
+      return {
+        id: doc.id,
+        title: typeof data.title === "string" ? data.title : "Untitled",
+        authorName: typeof data.authorName === "string" ? data.authorName : "Unknown",
+        updatedAt: toMillis(data.updatedAt) ?? toMillis(data.createdAt) ?? Date.now()
+      };
+    })
+    .sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export async function createDocument(input: CreateDocumentInput): Promise<SpreadsheetDocument> {

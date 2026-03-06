@@ -43,9 +43,10 @@ export function DocumentDashboard() {
         if (isMounted) {
           setDocuments(fetched);
         }
-      } catch {
+      } catch (err) {
         if (isMounted) {
-          setError("Failed to load documents from Firestore.");
+          const message = err instanceof Error ? err.message : "Failed to load documents from Firestore.";
+          setError(message);
         }
       } finally {
         if (isMounted) {
@@ -75,8 +76,9 @@ export function DocumentDashboard() {
       setDocuments((prev) => [created, ...prev]);
       setTitle("");
       setError(null);
-    } catch {
-      setError("Failed to create document.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create document.";
+      setError(message);
     } finally {
       setIsCreating(false);
     }
