@@ -5,10 +5,16 @@ Incremental implementation for a real-time collaborative spreadsheet using Next.
 ## Current Progress
 - Project scaffold complete
 - Dashboard implemented with create/list flow
-- Temporary local storage backing for documents
+- Firestore-backed document persistence
 - Document route scaffold in place (`/doc/[id]`)
 
 ## Next Steps
-- Replace local storage with Firebase Firestore documents
 - Implement editor grid with cell editing
 - Add realtime syncing and presence
+
+## Local Setup
+1. Copy `.env.example` to `.env.local`
+2. Fill Firebase web app values
+3. Run:
+   - `npm install`
+   - `npm run dev`

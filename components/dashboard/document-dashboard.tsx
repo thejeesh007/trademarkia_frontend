@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { createStoredDocument, getStoredDocuments } from "@/lib/utils/document-storage";
+import { createDocument, listDocuments } from "@/lib/firebase/documents";
+import { hasFirebaseConfig } from "@/lib/firebase/client";
 import { SpreadsheetDocument } from "@/types/spreadsheet";
 
 function formatDate(timestamp: number): string {
@@ -13,17 +14,54 @@ function formatDate(timestamp: number): string {
 }
 
 export function DocumentDashboard() {
-  const [documents, setDocuments] = useState<SpreadsheetDocument[]>(() => getStoredDocuments());
+  const [documents, setDocuments] = useState<SpreadsheetDocument[]>([]);
   const [title, setTitle] = useState("");
   const [authorName, setAuthorName] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canCreate = useMemo(
-    () => title.trim().length > 0 && authorName.trim().length > 0,
-    [title, authorName]
+    () => title.trim().length > 0 && authorName.trim().length > 0 && !isCreating,
+    [title, authorName, isCreating]
   );
 
-  function onCreateDocument(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadDocuments() {
+      if (!hasFirebaseConfig()) {
+        if (isMounted) {
+          setError("Firebase env is missing. Add NEXT_PUBLIC_FIREBASE_* values.");
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const fetched = await listDocuments();
+        if (isMounted) {
+          setDocuments(fetched);
+        }
+      } catch {
+        if (isMounted) {
+          setError("Failed to load documents from Firestore.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadDocuments();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  async function onCreateDocument(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!canCreate) {
@@ -31,10 +69,17 @@ export function DocumentDashboard() {
       return;
     }
 
-    const created = createStoredDocument({ title, authorName });
-    setDocuments((prev) => [created, ...prev]);
-    setTitle("");
-    setError(null);
+    try {
+      setIsCreating(true);
+      const created = await createDocument({ title, authorName });
+      setDocuments((prev) => [created, ...prev]);
+      setTitle("");
+      setError(null);
+    } catch {
+      setError("Failed to create document.");
+    } finally {
+      setIsCreating(false);
+    }
   }
 
   return (
@@ -42,7 +87,7 @@ export function DocumentDashboard() {
       <header>
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Document Dashboard</h1>
         <p className="mt-2 text-slate-600">
-          Create and manage spreadsheet documents. Real backend sync comes in the next step.
+          Create and manage spreadsheet documents stored in Firestore.
         </p>
       </header>
 
@@ -69,7 +114,7 @@ export function DocumentDashboard() {
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
             disabled={!canCreate}
           >
-            Create
+            {isCreating ? "Creating..." : "Create"}
           </button>
         </form>
 
@@ -79,7 +124,9 @@ export function DocumentDashboard() {
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Existing Documents</h2>
 
-        {documents.length === 0 ? (
+        {isLoading ? (
+          <p className="mt-4 text-sm text-slate-600">Loading documents...</p>
+        ) : documents.length === 0 ? (
           <p className="mt-4 text-sm text-slate-600">No documents yet. Create your first sheet.</p>
         ) : (
           <ul className="mt-4 divide-y divide-slate-200">
