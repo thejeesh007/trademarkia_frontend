@@ -22,6 +22,14 @@ function randomColor(): string {
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
 
+function seededColor(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return COLORS[hash % COLORS.length];
+}
+
 export function readSessionIdentity(): SessionIdentity | null {
   if (!isBrowser()) {
     return null;
@@ -49,6 +57,20 @@ export function saveSessionIdentity(name: string): SessionIdentity {
     uid: existing?.uid ?? randomId(),
     name: name.trim(),
     color: existing?.color ?? randomColor()
+  };
+
+  if (isBrowser()) {
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+  }
+
+  return identity;
+}
+
+export function saveSessionIdentityFromAuth(uid: string, name: string): SessionIdentity {
+  const identity: SessionIdentity = {
+    uid,
+    name: name.trim() || "Google User",
+    color: seededColor(uid)
   };
 
   if (isBrowser()) {

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { AuthUser, signInWithGoogle, signOutCurrentUser, subscribeToAuthState } from "@/lib/firebase/auth";
 import { createDocument, listDocuments } from "@/lib/firebase/documents";
 import { hasFirebaseConfig } from "@/lib/firebase/client";
 import { SpreadsheetDocument } from "@/types/spreadsheet";
@@ -19,12 +20,28 @@ export function DocumentDashboard() {
   const [authorName, setAuthorName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const canCreate = useMemo(
     () => title.trim().length > 0 && authorName.trim().length > 0 && !isCreating,
     [title, authorName, isCreating]
   );
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthState((user) => {
+      setAuthUser(user);
+      setIsAuthLoading(false);
+      if (user?.displayName) {
+        setAuthorName((prev) => (prev.trim() ? prev : user.displayName));
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -62,6 +79,30 @@ export function DocumentDashboard() {
     };
   }, []);
 
+  async function onGoogleSignIn() {
+    try {
+      const user = await signInWithGoogle();
+      setAuthUser(user);
+      if (user.displayName) {
+        setAuthorName((prev) => (prev.trim() ? prev : user.displayName));
+      }
+      setError(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Google sign-in failed.";
+      setError(message);
+    }
+  }
+
+  async function onSignOut() {
+    try {
+      await signOutCurrentUser();
+      setAuthUser(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sign-out failed.";
+      setError(message);
+    }
+  }
+
   async function onCreateDocument(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -87,10 +128,40 @@ export function DocumentDashboard() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-6 py-12">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Document Dashboard</h1>
-        <p className="mt-2 text-slate-600">
-          Create and manage spreadsheet documents stored in Firestore.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Document Dashboard</h1>
+            <p className="mt-2 text-slate-600">
+              Create and manage spreadsheet documents stored in Firestore.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {authUser ? (
+              <>
+                <span className="rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
+                  {authUser.displayName}
+                </span>
+                <button
+                  type="button"
+                  className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  onClick={onSignOut}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="rounded-md bg-slate-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
+                onClick={onGoogleSignIn}
+                disabled={isAuthLoading}
+              >
+                {isAuthLoading ? "Loading..." : "Sign in with Google"}
+              </button>
+            )}
+          </div>
+        </div>
       </header>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

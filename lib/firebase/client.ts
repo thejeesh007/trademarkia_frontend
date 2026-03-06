@@ -1,4 +1,5 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -12,6 +13,7 @@ const firebaseConfig = {
 
 let cachedApp: FirebaseApp | null = null;
 let cachedDb: Firestore | null = null;
+let cachedAuth: Auth | null = null;
 
 export function hasFirebaseConfig(): boolean {
   return Object.values(firebaseConfig).every((value) => typeof value === "string" && value.length > 0);
@@ -37,4 +39,13 @@ export function getFirestoreDb(): Firestore {
 
   cachedDb = getFirestore(getFirebaseApp());
   return cachedDb;
+}
+
+export function getFirebaseAuth(): Auth {
+  if (cachedAuth) {
+    return cachedAuth;
+  }
+
+  cachedAuth = getAuth(getFirebaseApp());
+  return cachedAuth;
 }

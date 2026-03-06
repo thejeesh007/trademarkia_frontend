@@ -3,10 +3,16 @@
 import Link from "next/link";
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { hasFirebaseConfig } from "@/lib/firebase/client";
+import { subscribeToAuthState } from "@/lib/firebase/auth";
 import { subscribeToDocumentCells, upsertCellValue } from "@/lib/firebase/cells";
 import { computeDisplayValues } from "@/lib/formula/engine";
 import { heartbeatPresence, removePresence, subscribeToPresence } from "@/lib/firebase/presence";
-import { readSessionIdentity, saveSessionIdentity, SessionIdentity } from "@/lib/realtime/identity";
+import {
+  readSessionIdentity,
+  saveSessionIdentity,
+  saveSessionIdentityFromAuth,
+  SessionIdentity
+} from "@/lib/realtime/identity";
 import { ActiveUser } from "@/types/spreadsheet";
 import { ActiveUsers } from "@/components/presence/active-users";
 
@@ -59,6 +65,18 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
     if (existing) {
       setIdentity(existing);
     }
+
+    const unsubscribeAuth = subscribeToAuthState((user) => {
+      if (!user) {
+        return;
+      }
+      const next = saveSessionIdentityFromAuth(user.uid, user.displayName);
+      setIdentity(next);
+    });
+
+    return () => {
+      unsubscribeAuth();
+    };
   }, []);
 
   useEffect(() => {

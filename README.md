@@ -13,9 +13,9 @@ Incremental implementation for a real-time collaborative spreadsheet using Next.
 - Formula engine v1: `=SUM(...)`, arithmetic (`+ - * /`), and cell references
 - Session identity (display name + color) for collaborators
 - Presence list of active users in the current document
+- Google Sign-In support via Firebase Auth
 
 ## Next Steps
-- Optional Google Sign-In via Firebase Auth
 - Presence hardening with Realtime Database heartbeats
 - Demo video + deployment checklist
 
