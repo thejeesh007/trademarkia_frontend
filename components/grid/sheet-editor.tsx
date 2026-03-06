@@ -5,6 +5,10 @@ import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { hasFirebaseConfig } from "@/lib/firebase/client";
 import { subscribeToDocumentCells, upsertCellValue } from "@/lib/firebase/cells";
 import { computeDisplayValues } from "@/lib/formula/engine";
+import { heartbeatPresence, removePresence, subscribeToPresence } from "@/lib/firebase/presence";
+import { readSessionIdentity, saveSessionIdentity, SessionIdentity } from "@/lib/realtime/identity";
+import { ActiveUser } from "@/types/spreadsheet";
+import { ActiveUsers } from "@/components/presence/active-users";
 
 const ROW_COUNT = 40;
 const COLUMN_COUNT = 20;
@@ -45,7 +49,17 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
   const [activeCell, setActiveCell] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("connecting");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [identity, setIdentity] = useState<SessionIdentity | null>(null);
+  const [identityName, setIdentityName] = useState("");
+  const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
   const computedValues = useMemo(() => computeDisplayValues(cellValues), [cellValues]);
+
+  useEffect(() => {
+    const existing = readSessionIdentity();
+    if (existing) {
+      setIdentity(existing);
+    }
+  }, []);
 
   useEffect(() => {
     if (!hasFirebaseConfig()) {
@@ -77,6 +91,57 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
       Object.values(saveTimers.current).forEach((timerId) => clearTimeout(timerId));
     };
   }, []);
+
+  useEffect(() => {
+    if (!identity) {
+      return () => undefined;
+    }
+
+    const currentIdentity = identity;
+    let isMounted = true;
+
+    async function heartbeat() {
+      try {
+        await heartbeatPresence(documentId, currentIdentity);
+      } catch {
+        if (isMounted) {
+          setSaveError((prev) => prev ?? "Presence heartbeat failed.");
+        }
+      }
+    }
+
+    void heartbeat();
+    const intervalId = setInterval(() => {
+      void heartbeat();
+    }, 15_000);
+
+    const unsubscribe = subscribeToPresence(
+      documentId,
+      (users) => {
+        if (isMounted) {
+          setActiveUsers(users);
+        }
+      },
+      (error) => {
+        if (isMounted) {
+          setSaveError(error.message);
+        }
+      }
+    );
+
+    const onBeforeUnload = () => {
+      void removePresence(documentId, currentIdentity.uid);
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+      unsubscribe();
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      void removePresence(documentId, currentIdentity.uid);
+    };
+  }, [documentId, identity]);
 
   async function persistCell(documentIdValue: string, id: string, nextValue: string) {
     try {
@@ -185,6 +250,14 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
     return "border-emerald-300 bg-emerald-50 text-emerald-800";
   }
 
+  function submitIdentity() {
+    if (!identityName.trim()) {
+      return;
+    }
+    const next = saveSessionIdentity(identityName);
+    setIdentity(next);
+  }
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[1200px] flex-col px-6 py-8">
       <header className="mb-5 flex items-center justify-between gap-4">
@@ -196,6 +269,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
         </div>
 
         <div className="flex items-center gap-4">
+          <ActiveUsers users={activeUsers} currentUid={identity?.uid ?? null} />
           <p className={`rounded-md border px-3 py-1 text-xs font-medium ${statusClassName()}`}>
             {statusLabel()}
           </p>
@@ -266,6 +340,39 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
           </table>
         </div>
       </section>
+
+      {!identity ? (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-900/35 p-6">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-slate-900">Set Your Display Name</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              This name and color will be visible to collaborators in this document.
+            </p>
+
+            <div className="mt-4 flex gap-2">
+              <input
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 focus:ring"
+                placeholder="Enter display name"
+                value={identityName}
+                onChange={(event) => setIdentityName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    submitIdentity();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                disabled={!identityName.trim()}
+                onClick={submitIdentity}
+              >
+                Join
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

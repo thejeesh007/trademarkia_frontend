@@ -11,11 +11,13 @@ Incremental implementation for a real-time collaborative spreadsheet using Next.
 - Firestore-backed cell autosave with realtime updates between sessions
 - Save-state indicator in editor (`Connecting`, `Saving`, `Saved`, `Error`)
 - Formula engine v1: `=SUM(...)`, arithmetic (`+ - * /`), and cell references
+- Session identity (display name + color) for collaborators
+- Presence list of active users in the current document
 
 ## Next Steps
-- Add presence (active collaborators)
-- Add identity (Google sign-in or display name)
-- Add collaborator presence UI
+- Optional Google Sign-In via Firebase Auth
+- Presence hardening with Realtime Database heartbeats
+- Demo video + deployment checklist
 
 ## Local Setup
 1. Copy `.env.example` to `.env.local`
