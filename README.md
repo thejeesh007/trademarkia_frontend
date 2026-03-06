@@ -6,11 +6,13 @@ Incremental implementation for a real-time collaborative spreadsheet using Next.
 - Project scaffold complete
 - Dashboard implemented with create/list flow
 - Firestore-backed document persistence
-- Document route scaffold in place (`/doc/[id]`)
+- Spreadsheet editor UI in place (`/doc/[id]`)
+- Editable 40x20 grid with row/column headers and keyboard navigation
 
 ## Next Steps
-- Implement editor grid with cell editing
+- Persist grid cell values in Firestore
 - Add realtime syncing and presence
+- Add formula parsing (`SUM`, arithmetic, cell references)
 
 ## Local Setup
 1. Copy `.env.example` to `.env.local`
