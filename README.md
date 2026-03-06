@@ -8,10 +8,11 @@ Incremental implementation for a real-time collaborative spreadsheet using Next.
 - Firestore-backed document persistence
 - Spreadsheet editor UI in place (`/doc/[id]`)
 - Editable 40x20 grid with row/column headers and keyboard navigation
+- Firestore-backed cell autosave with realtime updates between sessions
+- Save-state indicator in editor (`Connecting`, `Saving`, `Saved`, `Error`)
 
 ## Next Steps
-- Persist grid cell values in Firestore
-- Add realtime syncing and presence
+- Add presence (active collaborators)
 - Add formula parsing (`SUM`, arithmetic, cell references)
 
 ## Local Setup

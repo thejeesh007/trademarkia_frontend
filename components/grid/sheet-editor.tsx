@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { KeyboardEvent, useMemo, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { hasFirebaseConfig } from "@/lib/firebase/client";
+import { subscribeToDocumentCells, upsertCellValue } from "@/lib/firebase/cells";
 
 const ROW_COUNT = 40;
 const COLUMN_COUNT = 20;
@@ -27,6 +29,8 @@ type SheetEditorProps = {
   documentId: string;
 };
 
+type SaveStatus = "connecting" | "saved" | "saving" | "error";
+
 export function SheetEditor({ documentId }: SheetEditorProps) {
   const columns = useMemo(
     () => Array.from({ length: COLUMN_COUNT }, (_, index) => toColumnLabel(index)),
@@ -34,11 +38,70 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
   );
   const rows = useMemo(() => Array.from({ length: ROW_COUNT }, (_, index) => index + 1), []);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const pendingLocalValues = useRef<Record<string, string>>({});
   const [cellValues, setCellValues] = useState<Record<string, string>>({});
   const [activeCell, setActiveCell] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("connecting");
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!hasFirebaseConfig()) {
+      setSaveStatus("error");
+      setSaveError("Firebase env is missing. Add NEXT_PUBLIC_FIREBASE_* values.");
+      return () => undefined;
+    }
+
+    const unsubscribe = subscribeToDocumentCells(
+      documentId,
+      (remoteCells) => {
+        setCellValues({ ...remoteCells, ...pendingLocalValues.current });
+        setSaveStatus((prev) => (prev === "saving" ? prev : "saved"));
+        setSaveError(null);
+      },
+      (error) => {
+        setSaveStatus("error");
+        setSaveError(error.message);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [documentId]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(saveTimers.current).forEach((timerId) => clearTimeout(timerId));
+    };
+  }, []);
+
+  async function persistCell(documentIdValue: string, id: string, nextValue: string) {
+    try {
+      setSaveStatus("saving");
+      setSaveError(null);
+      await upsertCellValue(documentIdValue, id, nextValue);
+      delete pendingLocalValues.current[id];
+      setSaveStatus("saved");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save cell.";
+      setSaveStatus("error");
+      setSaveError(message);
+    }
+  }
 
   function updateCell(id: string, nextValue: string) {
+    pendingLocalValues.current[id] = nextValue;
     setCellValues((prev) => ({ ...prev, [id]: nextValue }));
+
+    const existingTimer = saveTimers.current[id];
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    saveTimers.current[id] = setTimeout(() => {
+      void persistCell(documentId, id, nextValue);
+    }, 300);
   }
 
   function focusCell(nextRow: number, nextColumn: number) {
@@ -97,6 +160,29 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
     }
   }
 
+  function statusLabel(): string {
+    if (saveStatus === "connecting") {
+      return "Sync status: Connecting...";
+    }
+    if (saveStatus === "saving") {
+      return "Sync status: Saving...";
+    }
+    if (saveStatus === "error") {
+      return "Sync status: Error";
+    }
+    return "Sync status: Saved";
+  }
+
+  function statusClassName(): string {
+    if (saveStatus === "saving" || saveStatus === "connecting") {
+      return "border-amber-300 bg-amber-50 text-amber-800";
+    }
+    if (saveStatus === "error") {
+      return "border-rose-300 bg-rose-50 text-rose-800";
+    }
+    return "border-emerald-300 bg-emerald-50 text-emerald-800";
+  }
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[1200px] flex-col px-6 py-8">
       <header className="mb-5 flex items-center justify-between gap-4">
@@ -108,14 +194,20 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
-            Sync status: Local only
+          <p className={`rounded-md border px-3 py-1 text-xs font-medium ${statusClassName()}`}>
+            {statusLabel()}
           </p>
           <Link className="text-sm font-medium text-blue-700 hover:underline" href="/">
             Back to dashboard
           </Link>
         </div>
       </header>
+
+      {saveError ? (
+        <p className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {saveError}
+        </p>
+      ) : null}
 
       <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
         <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-200">
