@@ -15,10 +15,6 @@ Incremental implementation for a real-time collaborative spreadsheet using Next.
 - Presence list of active users in the current document
 - Google Sign-In support via Firebase Auth
 
-## Next Steps
-- Presence hardening with Realtime Database heartbeats
-- Demo video + deployment checklist
-
 ## Local Setup
 1. Copy `.env.example` to `.env.local`
 2. Fill Firebase web app values
