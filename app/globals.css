@@ -15,6 +15,7 @@
   --accent-strong: #3e5df0;
   --accent-2: #f45cff;
   --danger: #e11d48;
+  --active-cell-bg: rgba(90, 124, 255, 0.16);
   --shadow: 0 24px 50px rgba(49, 74, 172, 0.18);
   --panel-shadow: 0 12px 28px rgba(32, 44, 98, 0.14);
 }
@@ -26,12 +27,13 @@ html[data-theme="dark"] {
   --surface: #121833;
   --surface-strong: #181f41;
   --text: #eef1ff;
-  --text-soft: #9da7cf;
+  --text-soft: #c5ceef;
   --border: #2b356a;
   --accent: #5b7bff;
   --accent-strong: #7f3dff;
   --accent-2: #ff5fd5;
   --danger: #fb7185;
+  --active-cell-bg: rgba(128, 167, 255, 0.2);
   --shadow: 0 28px 56px rgba(0, 0, 0, 0.52);
   --panel-shadow: 0 16px 34px rgba(0, 0, 0, 0.38);
 }
@@ -55,8 +57,8 @@ body {
 .glass-panel {
   border: 1px solid var(--border);
   background:
-    linear-gradient(145deg, color-mix(in oklab, var(--surface) 92%, white 8%), var(--surface)),
-    radial-gradient(circle at 100% 0%, color-mix(in oklab, var(--accent) 10%, transparent 90%), transparent 56%);
+    linear-gradient(145deg, color-mix(in oklab, var(--surface) 94%, white 6%), var(--surface)),
+    radial-gradient(circle at 100% 0%, color-mix(in oklab, var(--accent) 6%, transparent 94%), transparent 56%);
   box-shadow: var(--panel-shadow);
   backdrop-filter: blur(8px);
 }
@@ -102,7 +104,7 @@ body {
 
 .sheet-table th {
   background: color-mix(in oklab, var(--surface) 90%, white 10%);
-  color: var(--text-soft);
+  color: var(--text);
 }
 
 .sheet-table td {
@@ -112,4 +114,8 @@ body {
 .sheet-table th,
 .sheet-table td {
   border-color: var(--border);
+}
+
+.cell-active {
+  background: var(--active-cell-bg);
 }

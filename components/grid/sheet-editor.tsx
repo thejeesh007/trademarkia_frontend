@@ -57,6 +57,10 @@ function csvEscape(value: string): string {
   return /[",\n]/.test(safe) ? `"${safe}"` : safe;
 }
 
+function textExportEscape(value: string): string {
+  return value.replace(/\t/g, " ").replace(/\n/g, " ");
+}
+
 type SheetEditorProps = {
   documentId: string;
 };
@@ -199,6 +203,10 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
 
   function getCellFormat(id: string): CellFormat {
     return cellFormats[id] ?? DEFAULT_FORMAT;
+  }
+
+  function resolveDisplayColor(color: string): string {
+    return color.toLowerCase() === "#0f172a" ? "var(--text)" : color;
   }
 
   function schedulePersist(id: string, nextValue: string, nextFormat: CellFormat) {
@@ -449,6 +457,27 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
     URL.revokeObjectURL(url);
   }
 
+  function exportAsExcel() {
+    const lines: string[] = [];
+    lines.push(columnOrder.map((baseColumn) => textExportEscape(toColumnLabel(baseColumn))).join("\t"));
+
+    rowOrder.forEach((baseRow) => {
+      const values = columnOrder.map((baseColumn) => {
+        const id = cellId(baseRow, baseColumn);
+        return textExportEscape(computedValues[id] ?? cellValues[id] ?? "");
+      });
+      lines.push(values.join("\t"));
+    });
+
+    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${documentId}.xls`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   function statusLabel(): string {
     if (saveStatus === "connecting") {
       return "Sync status: Connecting...";
@@ -582,6 +611,14 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
           >
             Export CSV
           </button>
+
+          <button
+            type="button"
+            className="dark-btn rounded-md px-3 py-2 text-xs font-bold"
+            onClick={exportAsExcel}
+          >
+            Export Excel
+          </button>
         </div>
         <p className="themed-muted mt-2 text-xs">Drag headers to reorder. Drag header edges to resize rows/columns.</p>
       </section>
@@ -656,12 +693,12 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
                           ref={(element) => {
                             inputRefs.current[id] = element;
                           }}
-                          className={`w-full border-0 px-2 text-sm outline-none ${isActive ? "bg-emerald-100/40" : ""}`}
+                          className={`w-full border-0 px-2 text-sm outline-none ${isActive ? "cell-active" : ""}`}
                           style={{
                             height: `${Math.max(getRowHeight(baseRow) - 2, MIN_ROW_HEIGHT - 2)}px`,
                             fontWeight: format.bold ? 700 : 400,
                             fontStyle: format.italic ? "italic" : "normal",
-                            color: format.color
+                            color: resolveDisplayColor(format.color)
                           }}
                           value={inputValue}
                           onFocus={() => setActiveCell(id)}
