@@ -14,9 +14,12 @@ Incremental implementation for a real-time collaborative spreadsheet using Next.
 - Session identity (display name + color) for collaborators
 - Presence list of active users in the current document
 - Google Sign-In support via Firebase Auth
+- Cell formatting controls (bold, italic, color) with realtime sync
+- Column and row resizing via drag handles
+- Column and row reordering via drag-and-drop
+- CSV export support
 
 ## Next Steps
-- Presence hardening with Realtime Database heartbeats
 - Demo video + deployment checklist
 
 ## Local Setup

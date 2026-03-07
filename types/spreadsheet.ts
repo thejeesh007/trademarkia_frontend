@@ -10,6 +10,12 @@ export type CellValue = {
   computed: string;
 };
 
+export type CellFormat = {
+  bold: boolean;
+  italic: boolean;
+  color: string;
+};
+
 export type ActiveUser = {
   uid: string;
   name: string;

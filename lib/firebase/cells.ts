@@ -8,18 +8,25 @@ import {
 } from "firebase/firestore";
 import { FIREBASE_COLLECTIONS } from "@/lib/firebase/constants";
 import { getFirestoreDb, hasFirebaseConfig } from "@/lib/firebase/client";
+import { CellFormat } from "@/types/spreadsheet";
 
 type FirestoreCellData = {
   raw?: unknown;
+  format?: unknown;
+};
+
+export type DocumentCellsSnapshot = {
+  values: Record<string, string>;
+  formats: Record<string, CellFormat>;
 };
 
 export function subscribeToDocumentCells(
   documentId: string,
-  onCells: (cells: Record<string, string>) => void,
+  onCells: (cells: DocumentCellsSnapshot) => void,
   onError?: (error: Error) => void
 ): () => void {
   if (!hasFirebaseConfig()) {
-    onCells({});
+    onCells({ values: {}, formats: {} });
     return () => undefined;
   }
 
@@ -29,14 +36,24 @@ export function subscribeToDocumentCells(
   return onSnapshot(
     cellsCollection,
     (snapshot) => {
-      const nextCells: Record<string, string> = {};
+      const nextValues: Record<string, string> = {};
+      const nextFormats: Record<string, CellFormat> = {};
       snapshot.forEach((entry) => {
         const data = entry.data() as FirestoreCellData;
         if (typeof data.raw === "string") {
-          nextCells[entry.id] = data.raw;
+          nextValues[entry.id] = data.raw;
+        }
+
+        const rawFormat = data.format as Partial<CellFormat> | undefined;
+        if (rawFormat && typeof rawFormat === "object") {
+          nextFormats[entry.id] = {
+            bold: Boolean(rawFormat.bold),
+            italic: Boolean(rawFormat.italic),
+            color: typeof rawFormat.color === "string" ? rawFormat.color : "#0f172a"
+          };
         }
       });
-      onCells(nextCells);
+      onCells({ values: nextValues, formats: nextFormats });
     },
     (error) => {
       onError?.(error);
@@ -47,7 +64,8 @@ export function subscribeToDocumentCells(
 export async function upsertCellValue(
   documentId: string,
   cellId: string,
-  rawValue: string
+  rawValue: string,
+  format: CellFormat
 ): Promise<void> {
   if (!hasFirebaseConfig()) {
     throw new Error("Firebase is not configured.");
@@ -55,8 +73,9 @@ export async function upsertCellValue(
 
   const db = getFirestoreDb();
   const cellRef = doc(db, FIREBASE_COLLECTIONS.documents, documentId, FIREBASE_COLLECTIONS.cells, cellId);
+  const isDefaultFormat = !format.bold && !format.italic && format.color === "#0f172a";
 
-  if (rawValue.trim().length === 0) {
+  if (rawValue.trim().length === 0 && isDefaultFormat) {
     await deleteDoc(cellRef);
     return;
   }
@@ -65,6 +84,7 @@ export async function upsertCellValue(
     cellRef,
     {
       raw: rawValue,
+      format,
       updatedAt: serverTimestamp()
     },
     { merge: true }
