@@ -487,7 +487,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
     <main className="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col px-6 py-8">
       <header className="mb-5 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">Spreadsheet Editor</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Spreadsheet Editor</h1>
           <p className="themed-muted mt-1 text-sm">
             Document: <span className="font-medium">{documentId}</span>
           </p>
@@ -510,7 +510,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
         </p>
       ) : null}
 
-      <section className="glass-panel mb-4 rounded-3xl p-4">
+      <section className="glass-panel mb-4 rounded-[22px] p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="rounded-md border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)", color: "var(--text-soft)" }}>
             {activeCell ? `Cell ${activeCell}` : "Select a cell"}
@@ -531,7 +531,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
 
           <button
             type="button"
-            className={`rounded-md border px-3 py-2 text-xs font-semibold ${
+            className={`rounded-md border px-3 py-2 text-xs font-bold ${
               activeCellFormat.bold ? "accent-btn" : "dark-btn"
             }`}
             disabled={!activeCell}
@@ -547,7 +547,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
 
           <button
             type="button"
-            className={`rounded-md border px-3 py-2 text-xs font-semibold ${
+            className={`rounded-md border px-3 py-2 text-xs font-bold ${
               activeCellFormat.italic ? "accent-btn" : "dark-btn"
             }`}
             disabled={!activeCell}
@@ -561,7 +561,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
             Italic
           </button>
 
-          <label className="dark-btn flex items-center gap-2 rounded-md px-2 py-2 text-xs font-medium">
+          <label className="dark-btn flex items-center gap-2 rounded-md px-2 py-2 text-xs font-semibold">
             Color
             <input
               type="color"
@@ -577,7 +577,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
 
           <button
             type="button"
-            className="accent-btn rounded-md px-3 py-2 text-xs font-semibold"
+            className="accent-btn rounded-md px-3 py-2 text-xs font-bold"
             onClick={exportAsCsv}
           >
             Export CSV
@@ -586,7 +586,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
         <p className="themed-muted mt-2 text-xs">Drag headers to reorder. Drag header edges to resize rows/columns.</p>
       </section>
 
-      <section className="glass-panel rounded-3xl p-3">
+      <section className="glass-panel rounded-[22px] p-3">
         <div className="max-h-[70vh] overflow-auto rounded-lg border" style={{ borderColor: "var(--border)" }}>
           <table className="sheet-table w-full border-collapse">
             <thead className="sticky top-0 z-10">
@@ -689,7 +689,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
 
       {!identity ? (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/35 p-6">
-          <div className="glass-panel w-full max-w-md rounded-2xl p-6">
+          <div className="glass-panel w-full max-w-md rounded-[22px] p-6">
             <h2 className="text-lg font-semibold">Set Your Display Name</h2>
             <p className="themed-muted mt-1 text-sm">
               This name and color will be visible to collaborators in this document.

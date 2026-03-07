@@ -130,7 +130,7 @@ export function DocumentDashboard() {
       <header>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-4xl font-semibold tracking-tight">Document Dashboard</h1>
+            <h1 className="text-4xl font-bold tracking-tight">Document Dashboard</h1>
             <p className="themed-muted mt-2">
               Create and manage spreadsheet documents stored in Firestore.
             </p>
@@ -139,12 +139,12 @@ export function DocumentDashboard() {
           <div className="flex items-center gap-2">
             {authUser ? (
               <>
-                <span className="glass-panel rounded-full px-4 py-1 text-xs font-medium">
+                <span className="glass-panel rounded-full px-4 py-1 text-xs font-semibold">
                   {authUser.displayName}
                 </span>
                 <button
                   type="button"
-                  className="dark-btn rounded-full px-3 py-1 text-xs font-medium"
+                  className="dark-btn rounded-full px-3 py-1 text-xs font-semibold"
                   onClick={onSignOut}
                 >
                   Sign out
@@ -153,7 +153,7 @@ export function DocumentDashboard() {
             ) : (
               <button
                 type="button"
-                className="accent-btn rounded-full px-4 py-1.5 text-xs font-semibold disabled:opacity-60"
+                className="accent-btn rounded-full px-4 py-1.5 text-xs font-bold disabled:opacity-60"
                 onClick={onGoogleSignIn}
                 disabled={isAuthLoading}
               >
@@ -164,7 +164,7 @@ export function DocumentDashboard() {
         </div>
       </header>
 
-      <section className="glass-panel rounded-3xl p-6">
+      <section className="glass-panel rounded-[22px] p-6">
         <h2 className="text-lg font-semibold">Create New Document</h2>
 
         <form className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]" onSubmit={onCreateDocument}>
@@ -194,7 +194,7 @@ export function DocumentDashboard() {
         {error ? <p className="mt-2 text-sm" style={{ color: "var(--danger)" }}>{error}</p> : null}
       </section>
 
-      <section className="glass-panel rounded-3xl p-6">
+      <section className="glass-panel rounded-[22px] p-6">
         <h2 className="text-lg font-semibold">Existing Documents</h2>
 
         {isLoading ? (
