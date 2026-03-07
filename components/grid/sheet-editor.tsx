@@ -75,6 +75,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
   const [rowHeights, setRowHeights] = useState<Record<number, number>>({});
   const [draggingColumn, setDraggingColumn] = useState<number | null>(null);
   const [draggingRow, setDraggingRow] = useState<number | null>(null);
+  const [draggingCell, setDraggingCell] = useState<string | null>(null);
 
   const [cellValues, setCellValues] = useState<Record<string, string>>({});
   const [cellFormats, setCellFormats] = useState<Record<string, CellFormat>>({});
@@ -241,6 +242,30 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
     schedulePersist(id, cellValues[id] ?? "", nextFormat);
   }
 
+  function moveCellContent(sourceId: string, targetId: string) {
+    if (sourceId === targetId) {
+      return;
+    }
+
+    const sourceValue = cellValues[sourceId] ?? "";
+    const sourceFormat = getCellFormat(sourceId);
+
+    setCellValues((prev) => ({
+      ...prev,
+      [targetId]: sourceValue,
+      [sourceId]: ""
+    }));
+    setCellFormats((prev) => ({
+      ...prev,
+      [targetId]: sourceFormat,
+      [sourceId]: DEFAULT_FORMAT
+    }));
+
+    schedulePersist(targetId, sourceValue, sourceFormat);
+    schedulePersist(sourceId, "", DEFAULT_FORMAT);
+    setActiveCell(targetId);
+  }
+
   function getVisibleCellId(visibleRow: number, visibleColumn: number): string | null {
     const baseRow = rowOrder[visibleRow];
     const baseColumn = columnOrder[visibleColumn];
@@ -273,6 +298,22 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
   }
 
   function onCellKeyDown(event: KeyboardEvent<HTMLInputElement>, visibleRow: number, visibleColumn: number) {
+    const targetId = getVisibleCellId(visibleRow, visibleColumn);
+    const isModifierPressed = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+
+    if (targetId && isModifierPressed && key === "b") {
+      event.preventDefault();
+      updateCellFormat(targetId, { bold: !getCellFormat(targetId).bold });
+      return;
+    }
+
+    if (targetId && isModifierPressed && key === "i") {
+      event.preventDefault();
+      updateCellFormat(targetId, { italic: !getCellFormat(targetId).italic });
+      return;
+    }
+
     if (event.key === "ArrowUp") {
       event.preventDefault();
       focusCell(visibleRow - 1, visibleColumn);
@@ -494,6 +535,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
               activeCellFormat.bold ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 text-slate-700"
             }`}
             disabled={!activeCell}
+            onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
               if (activeCell) {
                 updateCellFormat(activeCell, { bold: !activeCellFormat.bold });
@@ -511,6 +553,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
                 : "border-slate-300 text-slate-700"
             }`}
             disabled={!activeCell}
+            onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
               if (activeCell) {
                 updateCellFormat(activeCell, { italic: !activeCellFormat.italic });
@@ -611,6 +654,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
                         style={{ width: `${getColumnWidth(baseColumn)}px`, minWidth: `${getColumnWidth(baseColumn)}px` }}
                       >
                         <input
+                          draggable
                           ref={(element) => {
                             inputRefs.current[id] = element;
                           }}
@@ -623,9 +667,17 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
                           }}
                           value={inputValue}
                           onFocus={() => setActiveCell(id)}
-                          onBlur={() => setActiveCell(null)}
                           onChange={(event) => updateCell(id, event.target.value)}
                           onKeyDown={(event) => onCellKeyDown(event, visibleRowIndex, visibleColumnIndex)}
+                          onDragStart={() => setDraggingCell(id)}
+                          onDragEnd={() => setDraggingCell(null)}
+                          onDragOver={(event) => event.preventDefault()}
+                          onDrop={() => {
+                            if (draggingCell) {
+                              moveCellContent(draggingCell, id);
+                              setDraggingCell(null);
+                            }
+                          }}
                         />
                       </td>
                     );
