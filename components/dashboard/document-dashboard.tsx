@@ -126,12 +126,12 @@ export function DocumentDashboard() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-6 py-12">
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-12">
       <header>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Document Dashboard</h1>
-            <p className="mt-2 text-slate-600">
+            <h1 className="text-4xl font-semibold tracking-tight">Document Dashboard</h1>
+            <p className="themed-muted mt-2">
               Create and manage spreadsheet documents stored in Firestore.
             </p>
           </div>
@@ -139,12 +139,12 @@ export function DocumentDashboard() {
           <div className="flex items-center gap-2">
             {authUser ? (
               <>
-                <span className="rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
+                <span className="glass-panel rounded-full px-4 py-1 text-xs font-medium">
                   {authUser.displayName}
                 </span>
                 <button
                   type="button"
-                  className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  className="dark-btn rounded-full px-3 py-1 text-xs font-medium"
                   onClick={onSignOut}
                 >
                   Sign out
@@ -153,7 +153,7 @@ export function DocumentDashboard() {
             ) : (
               <button
                 type="button"
-                className="rounded-md bg-slate-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
+                className="accent-btn rounded-full px-4 py-1.5 text-xs font-semibold disabled:opacity-60"
                 onClick={onGoogleSignIn}
                 disabled={isAuthLoading}
               >
@@ -164,19 +164,19 @@ export function DocumentDashboard() {
         </div>
       </header>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Create New Document</h2>
+      <section className="glass-panel rounded-3xl p-6">
+        <h2 className="text-lg font-semibold">Create New Document</h2>
 
         <form className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]" onSubmit={onCreateDocument}>
           <input
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 focus:ring"
+            className="themed-input rounded-xl px-4 py-3 text-sm"
             placeholder="Document title"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
           />
 
           <input
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 focus:ring"
+            className="themed-input rounded-xl px-4 py-3 text-sm"
             placeholder="Author name"
             value={authorName}
             onChange={(event) => setAuthorName(event.target.value)}
@@ -184,34 +184,34 @@ export function DocumentDashboard() {
 
           <button
             type="submit"
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="accent-btn rounded-xl px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
             disabled={!canCreate}
           >
             {isCreating ? "Creating..." : "Create"}
           </button>
         </form>
 
-        {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="mt-2 text-sm" style={{ color: "var(--danger)" }}>{error}</p> : null}
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Existing Documents</h2>
+      <section className="glass-panel rounded-3xl p-6">
+        <h2 className="text-lg font-semibold">Existing Documents</h2>
 
         {isLoading ? (
-          <p className="mt-4 text-sm text-slate-600">Loading documents...</p>
+          <p className="themed-muted mt-4 text-sm">Loading documents...</p>
         ) : documents.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">No documents yet. Create your first sheet.</p>
+          <p className="themed-muted mt-4 text-sm">No documents yet. Create your first sheet.</p>
         ) : (
-          <ul className="mt-4 divide-y divide-slate-200">
+          <ul className="mt-4 divide-y" style={{ borderColor: "var(--border)" }}>
             {documents.map((doc) => (
               <li key={doc.id} className="py-3">
                 <Link className="group flex items-center justify-between gap-3" href={`/doc/${doc.id}`}>
                   <div>
-                    <p className="text-sm font-medium text-slate-900 group-hover:text-blue-700">{doc.title}</p>
-                    <p className="text-xs text-slate-600">by {doc.authorName}</p>
+                    <p className="text-sm font-medium group-hover:opacity-70">{doc.title}</p>
+                    <p className="themed-muted text-xs">by {doc.authorName}</p>
                   </div>
 
-                  <p className="text-xs text-slate-500">Updated {formatDate(doc.updatedAt)}</p>
+                  <p className="themed-muted text-xs">Updated {formatDate(doc.updatedAt)}</p>
                 </Link>
               </li>
             ))}

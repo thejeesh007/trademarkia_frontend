@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,7 +12,12 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <div className="app-shell">
+          <ThemeToggle />
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
