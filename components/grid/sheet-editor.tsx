@@ -66,12 +66,34 @@ type SheetEditorProps = {
 };
 
 type SaveStatus = "connecting" | "saved" | "saving" | "error";
+type CellSnapshot = {
+  values: Record<string, string>;
+  formats: Record<string, CellFormat>;
+};
+
+const HISTORY_LIMIT = 120;
+
+function cloneSnapshot(snapshot: CellSnapshot): CellSnapshot {
+  return {
+    values: { ...snapshot.values },
+    formats: { ...snapshot.formats }
+  };
+}
+
+function getFormatFromMap(map: Record<string, CellFormat>, id: string): CellFormat {
+  return map[id] ?? DEFAULT_FORMAT;
+}
+
+function isSameFormat(a: CellFormat, b: CellFormat): boolean {
+  return a.bold === b.bold && a.italic === b.italic && a.color === b.color;
+}
 
 export function SheetEditor({ documentId }: SheetEditorProps) {
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const pendingLocalValues = useRef<Record<string, string>>({});
   const pendingLocalFormats = useRef<Record<string, CellFormat>>({});
+  const historyRef = useRef<{ past: CellSnapshot[]; future: CellSnapshot[] }>({ past: [], future: [] });
 
   const [columnOrder, setColumnOrder] = useState<number[]>(() => [...BASE_COLUMNS]);
   const [rowOrder, setRowOrder] = useState<number[]>(() => [...BASE_ROWS]);
@@ -89,6 +111,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
   const [identity, setIdentity] = useState<SessionIdentity | null>(null);
   const [identityName, setIdentityName] = useState("");
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
+  const [, setHistoryTick] = useState(0);
   const computedValues = useMemo(() => computeDisplayValues(cellValues), [cellValues]);
 
   useEffect(() => {
@@ -205,6 +228,51 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
     return cellFormats[id] ?? DEFAULT_FORMAT;
   }
 
+  function persistStateDiff(
+    prevValues: Record<string, string>,
+    prevFormats: Record<string, CellFormat>,
+    nextValues: Record<string, string>,
+    nextFormats: Record<string, CellFormat>
+  ) {
+    const ids = new Set<string>([
+      ...Object.keys(prevValues),
+      ...Object.keys(nextValues),
+      ...Object.keys(prevFormats),
+      ...Object.keys(nextFormats)
+    ]);
+
+    ids.forEach((id) => {
+      const prevValue = prevValues[id] ?? "";
+      const nextValue = nextValues[id] ?? "";
+      const prevFormat = getFormatFromMap(prevFormats, id);
+      const nextFormat = getFormatFromMap(nextFormats, id);
+      if (prevValue !== nextValue || !isSameFormat(prevFormat, nextFormat)) {
+        schedulePersist(id, nextValue, nextFormat);
+      }
+    });
+  }
+
+  function applyStateChange(
+    prevValues: Record<string, string>,
+    prevFormats: Record<string, CellFormat>,
+    nextValues: Record<string, string>,
+    nextFormats: Record<string, CellFormat>,
+    recordHistory: boolean
+  ) {
+    if (recordHistory) {
+      historyRef.current.past.push(cloneSnapshot({ values: prevValues, formats: prevFormats }));
+      if (historyRef.current.past.length > HISTORY_LIMIT) {
+        historyRef.current.past.shift();
+      }
+      historyRef.current.future = [];
+      setHistoryTick((tick) => tick + 1);
+    }
+
+    setCellValues(nextValues);
+    setCellFormats(nextFormats);
+    persistStateDiff(prevValues, prevFormats, nextValues, nextFormats);
+  }
+
   function resolveDisplayColor(color: string): string {
     return color.toLowerCase() === "#0f172a" ? "var(--text)" : color;
   }
@@ -235,19 +303,23 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
   }
 
   function updateCell(id: string, nextValue: string) {
-    const nextFormat = getCellFormat(id);
-    setCellValues((prev) => ({ ...prev, [id]: nextValue }));
-    schedulePersist(id, nextValue, nextFormat);
+    const prevValues = cellValues;
+    const prevFormats = cellFormats;
+    const nextValues = { ...cellValues, [id]: nextValue };
+    const nextFormats = cellFormats;
+    applyStateChange(prevValues, prevFormats, nextValues, nextFormats, true);
   }
 
   function updateCellFormat(id: string, partial: Partial<CellFormat>) {
+    const prevValues = cellValues;
+    const prevFormats = cellFormats;
     const nextFormat: CellFormat = {
       ...getCellFormat(id),
       ...partial
     };
-
-    setCellFormats((prev) => ({ ...prev, [id]: nextFormat }));
-    schedulePersist(id, cellValues[id] ?? "", nextFormat);
+    const nextValues = cellValues;
+    const nextFormats = { ...cellFormats, [id]: nextFormat };
+    applyStateChange(prevValues, prevFormats, nextValues, nextFormats, true);
   }
 
   function moveCellContent(sourceId: string, targetId: string) {
@@ -258,20 +330,71 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
     const sourceValue = cellValues[sourceId] ?? "";
     const sourceFormat = getCellFormat(sourceId);
 
-    setCellValues((prev) => ({
-      ...prev,
+    const prevValues = cellValues;
+    const prevFormats = cellFormats;
+    const nextValues = {
+      ...cellValues,
       [targetId]: sourceValue,
       [sourceId]: ""
-    }));
-    setCellFormats((prev) => ({
-      ...prev,
+    };
+    const nextFormats = {
+      ...cellFormats,
       [targetId]: sourceFormat,
       [sourceId]: DEFAULT_FORMAT
-    }));
+    };
 
-    schedulePersist(targetId, sourceValue, sourceFormat);
-    schedulePersist(sourceId, "", DEFAULT_FORMAT);
+    applyStateChange(prevValues, prevFormats, nextValues, nextFormats, true);
     setActiveCell(targetId);
+  }
+
+  function undo() {
+    const previous = historyRef.current.past.pop();
+    if (!previous) {
+      return;
+    }
+
+    historyRef.current.future.push(cloneSnapshot({ values: cellValues, formats: cellFormats }));
+    applyStateChange(cellValues, cellFormats, previous.values, previous.formats, false);
+    setHistoryTick((tick) => tick + 1);
+  }
+
+  function redo() {
+    const next = historyRef.current.future.pop();
+    if (!next) {
+      return;
+    }
+
+    historyRef.current.past.push(cloneSnapshot({ values: cellValues, formats: cellFormats }));
+    if (historyRef.current.past.length > HISTORY_LIMIT) {
+      historyRef.current.past.shift();
+    }
+    applyStateChange(cellValues, cellFormats, next.values, next.formats, false);
+    setHistoryTick((tick) => tick + 1);
+  }
+
+  const canUndo = historyRef.current.past.length > 0;
+  const canRedo = historyRef.current.future.length > 0;
+
+  function onShortcutUndoRedo(event: KeyboardEvent<HTMLInputElement>): boolean {
+    const isModifierPressed = event.ctrlKey || event.metaKey;
+    if (!isModifierPressed) {
+      return false;
+    }
+
+    const key = event.key.toLowerCase();
+    if (key === "z" && !event.shiftKey) {
+      event.preventDefault();
+      undo();
+      return true;
+    }
+
+    if (key === "y" || (key === "z" && event.shiftKey)) {
+      event.preventDefault();
+      redo();
+      return true;
+    }
+
+    return false;
   }
 
   function getVisibleCellId(visibleRow: number, visibleColumn: number): string | null {
@@ -306,6 +429,10 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
   }
 
   function onCellKeyDown(event: KeyboardEvent<HTMLInputElement>, visibleRow: number, visibleColumn: number) {
+    if (onShortcutUndoRedo(event)) {
+      return;
+    }
+
     const targetId = getVisibleCellId(visibleRow, visibleColumn);
     const isModifierPressed = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
@@ -618,6 +745,24 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
             onClick={exportAsExcel}
           >
             Export Excel
+          </button>
+
+          <button
+            type="button"
+            className="dark-btn rounded-md px-3 py-2 text-xs font-bold disabled:opacity-50"
+            onClick={undo}
+            disabled={!canUndo}
+          >
+            Undo
+          </button>
+
+          <button
+            type="button"
+            className="dark-btn rounded-md px-3 py-2 text-xs font-bold disabled:opacity-50"
+            onClick={redo}
+            disabled={!canRedo}
+          >
+            Redo
           </button>
         </div>
         <p className="themed-muted mt-2 text-xs">Drag headers to reorder. Drag header edges to resize rows/columns.</p>
