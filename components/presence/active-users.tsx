@@ -17,14 +17,14 @@ export function ActiveUsers({ users, currentUid }: ActiveUsersProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex max-w-full flex-wrap items-center gap-2">
       {users.map((user) => (
         <span
           key={user.uid}
-          className="glass-panel inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-medium"
+          className="glass-panel inline-flex max-w-full items-center gap-2 rounded-full px-2 py-1 text-xs font-medium"
         >
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: user.color }} />
-          {user.name}
+          <span className="truncate">{user.name}</span>
           {user.uid === currentUid ? " (You)" : ""}
         </span>
       ))}

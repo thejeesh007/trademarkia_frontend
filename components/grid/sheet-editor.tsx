@@ -640,8 +640,8 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[1400px] flex-col px-6 py-8">
-      <header className="mb-5 flex items-center justify-between gap-4">
+    <main className="mx-auto flex min-h-screen w-full max-w-[1400px] flex-col px-4 py-6 sm:px-6 sm:py-8">
+      <header className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Spreadsheet Editor</h1>
           <p className="themed-muted mt-1 text-sm">
@@ -649,7 +649,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <ActiveUsers users={activeUsers} currentUid={identity?.uid ?? null} />
           <p className={`rounded-md border px-3 py-1 text-xs font-medium ${statusClassName()}`}>
             {statusLabel()}
@@ -667,13 +667,13 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
       ) : null}
 
       <section className="glass-panel mb-4 rounded-2xl p-4">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[auto_1fr_auto_auto_auto_auto_auto_auto] xl:items-center">
           <div className="rounded-md border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--border)", color: "var(--text-soft)" }}>
             {activeCell ? `Cell ${activeCell}` : "Select a cell"}
           </div>
 
           <input
-            className="themed-input min-w-[260px] flex-1 rounded-xl px-3 py-2 text-sm disabled:opacity-70"
+            className="themed-input h-10 min-w-[220px] rounded-xl px-3 text-sm disabled:opacity-70 xl:min-w-[320px]"
             placeholder="Type value or formula (e.g. =SUM(A1:A5))"
             value={activeCellRawValue}
             onChange={(event) => {
@@ -687,7 +687,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
 
           <button
             type="button"
-            className={`rounded-md border px-3 py-2 text-xs font-bold ${
+            className={`h-10 rounded-md border px-3 text-xs font-bold ${
               activeCellFormat.bold ? "accent-btn" : "dark-btn"
             }`}
             disabled={!activeCell}
@@ -703,7 +703,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
 
           <button
             type="button"
-            className={`rounded-md border px-3 py-2 text-xs font-bold ${
+            className={`h-10 rounded-md border px-3 text-xs font-bold ${
               activeCellFormat.italic ? "accent-btn" : "dark-btn"
             }`}
             disabled={!activeCell}
@@ -717,7 +717,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
             Italic
           </button>
 
-          <label className="dark-btn flex items-center gap-2 rounded-md px-2 py-2 text-xs font-semibold">
+          <label className="dark-btn flex h-10 items-center gap-2 rounded-md px-2 text-xs font-semibold">
             Color
             <input
               type="color"
@@ -733,7 +733,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
 
           <button
             type="button"
-            className="accent-btn rounded-md px-3 py-2 text-xs font-bold"
+            className="accent-btn h-10 rounded-md px-3 text-xs font-bold"
             onClick={exportAsCsv}
           >
             Export CSV
@@ -741,7 +741,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
 
           <button
             type="button"
-            className="dark-btn rounded-md px-3 py-2 text-xs font-bold"
+            className="dark-btn h-10 rounded-md px-3 text-xs font-bold"
             onClick={exportAsExcel}
           >
             Export Excel
@@ -749,7 +749,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
 
           <button
             type="button"
-            className="dark-btn rounded-md px-3 py-2 text-xs font-bold disabled:opacity-50"
+            className="dark-btn h-10 rounded-md px-3 text-xs font-bold disabled:opacity-50"
             onClick={undo}
             disabled={!canUndo}
           >
@@ -758,7 +758,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
 
           <button
             type="button"
-            className="dark-btn rounded-md px-3 py-2 text-xs font-bold disabled:opacity-50"
+            className="dark-btn h-10 rounded-md px-3 text-xs font-bold disabled:opacity-50"
             onClick={redo}
             disabled={!canRedo}
           >
@@ -769,7 +769,7 @@ export function SheetEditor({ documentId }: SheetEditorProps) {
       </section>
 
       <section className="glass-panel rounded-2xl p-3">
-        <div className="max-h-[70vh] overflow-auto rounded-lg border" style={{ borderColor: "var(--border)" }}>
+        <div className="max-h-[72vh] overflow-auto rounded-lg border" style={{ borderColor: "var(--border)" }}>
           <table className="sheet-table w-full border-collapse">
             <thead className="sticky top-0 z-10">
               <tr>

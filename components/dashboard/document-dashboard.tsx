@@ -126,9 +126,9 @@ export function DocumentDashboard() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-4 py-10 sm:px-6 sm:py-12">
       <header>
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Document Dashboard</h1>
             <p className="themed-muted mt-2">
@@ -136,7 +136,7 @@ export function DocumentDashboard() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {authUser ? (
               <>
                 <span className="glass-panel rounded-full px-4 py-1 text-xs font-semibold">
@@ -144,7 +144,7 @@ export function DocumentDashboard() {
                 </span>
                 <button
                   type="button"
-                  className="dark-btn rounded-full px-3 py-1 text-xs font-semibold"
+                  className="dark-btn h-9 rounded-full px-3 text-xs font-semibold"
                   onClick={onSignOut}
                 >
                   Sign out
@@ -153,7 +153,7 @@ export function DocumentDashboard() {
             ) : (
               <button
                 type="button"
-                className="accent-btn rounded-full px-4 py-1.5 text-xs font-bold disabled:opacity-60"
+                className="accent-btn h-9 rounded-full px-4 text-xs font-bold disabled:opacity-60"
                 onClick={onGoogleSignIn}
                 disabled={isAuthLoading}
               >
@@ -167,16 +167,16 @@ export function DocumentDashboard() {
       <section className="glass-panel rounded-2xl p-6">
         <h2 className="text-lg font-semibold">Create New Document</h2>
 
-        <form className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]" onSubmit={onCreateDocument}>
+        <form className="mt-4 grid gap-3 lg:grid-cols-[1fr_1fr_auto]" onSubmit={onCreateDocument}>
           <input
-            className="themed-input rounded-xl px-4 py-3 text-sm"
+            className="themed-input h-11 rounded-xl px-4 text-sm"
             placeholder="Document title"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
           />
 
           <input
-            className="themed-input rounded-xl px-4 py-3 text-sm"
+            className="themed-input h-11 rounded-xl px-4 text-sm"
             placeholder="Author name"
             value={authorName}
             onChange={(event) => setAuthorName(event.target.value)}
@@ -184,7 +184,7 @@ export function DocumentDashboard() {
 
           <button
             type="submit"
-            className="accent-btn rounded-xl px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="accent-btn h-11 rounded-xl px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
             disabled={!canCreate}
           >
             {isCreating ? "Creating..." : "Create"}
