@@ -126,11 +126,11 @@ export function DocumentDashboard() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-12">
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-6 py-12">
       <header>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">Document Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Document Dashboard</h1>
             <p className="themed-muted mt-2">
               Create and manage spreadsheet documents stored in Firestore.
             </p>
@@ -164,7 +164,7 @@ export function DocumentDashboard() {
         </div>
       </header>
 
-      <section className="glass-panel rounded-[22px] p-6">
+      <section className="glass-panel rounded-2xl p-6">
         <h2 className="text-lg font-semibold">Create New Document</h2>
 
         <form className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]" onSubmit={onCreateDocument}>
@@ -194,7 +194,7 @@ export function DocumentDashboard() {
         {error ? <p className="mt-2 text-sm" style={{ color: "var(--danger)" }}>{error}</p> : null}
       </section>
 
-      <section className="glass-panel rounded-[22px] p-6">
+      <section className="glass-panel rounded-2xl p-6">
         <h2 className="text-lg font-semibold">Existing Documents</h2>
 
         {isLoading ? (
